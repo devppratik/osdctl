@@ -5,7 +5,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/openshift/osdctl/cmd/common"
+	kubeutils "github.com/openshift/osdctl/cmd/common"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -42,7 +42,7 @@ func ClearSilence(cmd *silenceCmd) {
 	silenceIDs := cmd.silenceIDs
 	all := cmd.all
 
-	_, kubeconfig, clientset, err := common.GetKubeConfigAndClient(clusterID)
+	_, kubeconfig, clientset, err := kubeutils.GetKubeConfigAndClient(clusterID)
 	if err != nil {
 		log.Fatal(err)
 	}

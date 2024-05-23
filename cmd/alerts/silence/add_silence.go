@@ -1,11 +1,12 @@
 package silence
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
 
-	"github.com/openshift/osdctl/cmd/common"
+	kubeutils "github.com/openshift/osdctl/cmd/common"
 	ocmutils "github.com/openshift/osdctl/pkg/utils"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
@@ -35,9 +36,9 @@ func NewCmdAddSilence() *cobra.Command {
 	}
 
 	cmd.Flags().StringSliceVar(&addSilenceCmd.alertID, "alertname", []string{}, "alertname (comma-separated)")
-	cmd.Flags().StringVarP(&addSilenceCmd.comment, "comment", "c", "", "add comment about silence")
-	cmd.Flags().StringVarP(&addSilenceCmd.duration, "duration", "d", "15d", "add duration for silence") //default duration set to 15 days
-	cmd.Flags().BoolVarP(&addSilenceCmd.all, "all", "a", false, "add silences for all alert")
+	cmd.Flags().StringVarP(&addSilenceCmd.comment, "comment", "c", "Adding silence using the osdctl alert command", "add comment about silence")
+	cmd.Flags().StringVarP(&addSilenceCmd.duration, "duration", "d", "15d", "Adding duration for silence as 15 days") //default duration set to 15 days
+	cmd.Flags().BoolVarP(&addSilenceCmd.all, "all", "a", false, "Adding silences for all alert")
 
 	return cmd
 }
@@ -51,7 +52,7 @@ func AddSilence(cmd *addSilenceCmd) {
 
 	username, clustername := GetUserAndClusterInfo(clusterID)
 
-	_, kubeconfig, clientset, err := common.GetKubeConfigAndClient(clusterID)
+	_, kubeconfig, clientset, err := kubeutils.GetKubeConfigAndClient(clusterID)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -65,13 +66,56 @@ func AddSilence(cmd *addSilenceCmd) {
 	}
 
 }
+func AddAllSilence(clusterID, duration, comment, username, clustername string, kubeconfig *rest.Config, clientset *kubernetes.Clientset) {
+	alerts := fetchAllAlerts(clusterID, kubeconfig, clientset)
+	for _, alert := range alerts {
+		addCmd := []string{
+			"amtool",
+			"silence",
+			"add",
+			"alertname=" + alert.Labels.Alertname,
+			"--alertmanager.url=" + LocalHostUrl,
+			"--duration=" + duration,
+			"--comment=" + comment,
+		}
 
+		output, err := ExecInPod(kubeconfig, clientset, addCmd)
+		if err != nil {
+			log.Fatal("Exiting the program")
+			return
+		}
+
+		formattedOutput := strings.Replace(output, "\n", " ", -1)
+
+		fmt.Printf("Alert %s has been silenced with id \"%s\" for a duration of %s by user \"%s\" \n", alert.Labels.Alertname, formattedOutput, duration, username)
+	}
+}
+
+func fetchAllAlerts(clusterID string, kubeconfig *rest.Config, clientset *kubernetes.Clientset) []Alert {
+	var fetchedAlerts []Alert
+
+	listAlertCmd := []string{"amtool", "--alertmanager.url", LocalHostUrl, "alert", "-o", "json"}
+	output, err := ExecInPod(kubeconfig, clientset, listAlertCmd)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = json.Unmarshal([]byte(output), &fetchedAlerts)
+	if err != nil {
+		log.Fatal("Error in unmarshaling the alerts", err)
+	}
+
+	return fetchedAlerts
+}
+
+/*
 func AddAllSilence(clusterID, duration, comment, username, clustername string, kubeconfig *rest.Config, clientset *kubernetes.Clientset) {
 	addCmd := []string{
 		"amtool",
 		"silence",
 		"add",
-		"cluster=" + clusterID,
+		//"cluster=" + clusterID,
+		"namespace=~" + AccountNamespace,
 		"--alertmanager.url=" + LocalHostUrl,
 		"--duration=" + duration,
 		"--comment=" + comment,
@@ -79,13 +123,14 @@ func AddAllSilence(clusterID, duration, comment, username, clustername string, k
 
 	output, err := ExecInPod(kubeconfig, clientset, addCmd)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal("Exiting the program")
+		return
 	}
 
 	formattedOutput := strings.Replace(output, "\n", " ", -1)
 
 	fmt.Printf("All alerts for cluster %s has been silenced with id \"%s\" for a duration of %s by user \"%s\" \n", clustername, formattedOutput, duration, username)
-}
+}*/
 
 func AddAlertNameSilence(alertID []string, duration, comment, username string, kubeconfig *rest.Config, clientset *kubernetes.Clientset) {
 	for _, alertname := range alertID {
@@ -101,7 +146,8 @@ func AddAlertNameSilence(alertID []string, duration, comment, username string, k
 
 		output, err := ExecInPod(kubeconfig, clientset, addCmd)
 		if err != nil {
-			fmt.Println(err)
+			log.Fatal("Exiting the program")
+			return
 		}
 
 		formattedOutput := strings.Replace(output, "\n", " ", -1)

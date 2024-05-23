@@ -5,33 +5,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/openshift/osdctl/cmd/common"
+	kubeutils "github.com/openshift/osdctl/cmd/common"
 	"github.com/spf13/cobra"
 )
-
-type ID struct {
-	ID string `json:"id"`
-}
-
-type Matchers struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
-}
-
-type Status struct {
-	State string `json:"state"`
-}
-
-type Silence struct {
-	ID       string     `json:"id"`
-	Matchers []Matchers `json:"matchers"`
-
-	Status    Status `json:"status"`
-	Comment   string `json:"comment"`
-	CreatedBy string `json:"createdBy"`
-	EndsAt    string `json:"endsAt"`
-	StartsAt  string `json:"startsAt"`
-}
 
 func NewCmdListSilence() *cobra.Command {
 	return &cobra.Command{
@@ -51,7 +27,7 @@ func ListSilence(clusterID string) {
 
 	silenceCmd := []string{"amtool", "silence", "--alertmanager.url", LocalHostUrl, "-o", "json"}
 
-	_, kubeconfig, clientset, err := common.GetKubeConfigAndClient(clusterID)
+	_, kubeconfig, clientset, err := kubeutils.GetKubeConfigAndClient(clusterID)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -81,13 +57,13 @@ func printSilence(silence Silence) {
 	id, matchers, status, created, starts, end, comment := silence.ID, silence.Matchers, silence.Status, silence.CreatedBy, silence.StartsAt, silence.EndsAt, silence.Comment
 	fmt.Println("-------------------------------------------")
 	for _, matcher := range matchers {
-		fmt.Printf("  SilenceID:		%s\n", id)
-		fmt.Printf("  Status:		%s\n", status.State)
-		fmt.Printf("  Created By:		%s\n", created)
-		fmt.Printf("  Starts At:		%s\n", starts)
-		fmt.Printf("  Ends At:		%s\n", end)
-		fmt.Printf("  Comment:		%s\n", comment)
-		fmt.Printf("  AlertName:		%s\n", matcher.Value)
+		fmt.Printf("SilenceID:	%s\n", id)
+		fmt.Printf("Status:	%s\n", status.State)
+		fmt.Printf("Created By:	%s\n", created)
+		fmt.Printf("Starts At:	%s\n", starts)
+		fmt.Printf("Ends At:	%s\n", end)
+		fmt.Printf("Comment:	%s\n", comment)
+		fmt.Printf("AlertName:	%s\n", matcher.Value)
 	}
 	fmt.Println("---------------------------------------------")
 }
