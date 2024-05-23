@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	common "github.com/openshift/osdctl/cmd/alerts/silence"
+	"github.com/openshift/osdctl/cmd/alerts/utils"
 	kubeutils "github.com/openshift/osdctl/cmd/common"
 	"github.com/spf13/cobra"
 )
@@ -59,16 +59,16 @@ func ListAlerts(cmd *alertCmd) {
 }
 
 func getAlertLevel(clusterID, alertLevel string) {
-	var alerts []common.Alert
+	var alerts []utils.Alert
 
-	listAlertCmd := []string{"amtool", "--alertmanager.url", common.LocalHostUrl, "alert", "-o", "json"}
+	listAlertCmd := []string{"amtool", "--alertmanager.url", utils.LocalHostUrl, "alert", "-o", "json"}
 
 	_, kubeconfig, clientset, err := kubeutils.GetKubeConfigAndClient(clusterID)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	output, err := common.ExecInPod(kubeconfig, clientset, listAlertCmd)
+	output, err := utils.ExecInPod(kubeconfig, clientset, listAlertCmd)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -102,7 +102,7 @@ func getAlertLevel(clusterID, alertLevel string) {
 	}
 }
 
-func printAlert(labels common.AlertLabels, annotations common.AlertAnnotations, status common.AlertStatus) {
+func printAlert(labels utils.AlertLabels, annotations utils.AlertAnnotations, status utils.AlertStatus) {
 	fmt.Printf("  AlertName:  %s\n", labels.Alertname)
 	fmt.Printf("  Severity:   %s\n", labels.Severity)
 	fmt.Printf("  State:      %s\n", status.State)

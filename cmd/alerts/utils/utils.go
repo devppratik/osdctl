@@ -1,4 +1,4 @@
-package silence
+package utils
 
 import (
 	"context"
@@ -12,52 +12,6 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/kubectl/pkg/scheme"
 )
-
-// Labels represents a set of labels associated with an alert.
-type AlertLabels struct {
-	Alertname string `json:"alertname"`
-	Severity  string `json:"severity"`
-}
-
-// Status represents a set of state associated with an alert.
-type AlertStatus struct {
-	State string `json:"state"`
-}
-
-// Annotations represents a set of summary/description associated with an alert.
-type AlertAnnotations struct {
-	Summary string `json:"summary"`
-}
-
-// Alert represents a set of above declared struct Labels,Status and annoataions
-type Alert struct {
-	Labels      AlertLabels      `json:"labels"`
-	Status      AlertStatus      `json:"status"`
-	Annotations AlertAnnotations `json:"annotations"`
-}
-
-type SilenceID struct {
-	ID string `json:"id"`
-}
-
-type SilenceMatchers struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
-}
-
-type SilenceStatus struct {
-	State string `json:"state"`
-}
-
-type Silence struct {
-	ID        string            `json:"id"`
-	Matchers  []SilenceMatchers `json:"matchers"`
-	Status    SilenceStatus     `json:"status"`
-	Comment   string            `json:"comment"`
-	CreatedBy string            `json:"createdBy"`
-	EndsAt    string            `json:"endsAt"`
-	StartsAt  string            `json:"startsAt"`
-}
 
 const (
 	AccountNamespace = "openshift-monitoring"

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/openshift/osdctl/cmd/alerts/utils"
 	kubeutils "github.com/openshift/osdctl/cmd/common"
 	"github.com/spf13/cobra"
 )
@@ -23,16 +24,16 @@ func NewCmdListSilence() *cobra.Command {
 }
 
 func ListSilence(clusterID string) {
-	var silences []Silence
+	var silences []utils.Silence
 
-	silenceCmd := []string{"amtool", "silence", "--alertmanager.url", LocalHostUrl, "-o", "json"}
+	silenceCmd := []string{"amtool", "silence", "--alertmanager.url", utils.LocalHostUrl, "-o", "json"}
 
 	_, kubeconfig, clientset, err := kubeutils.GetKubeConfigAndClient(clusterID)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	op, err := ExecInPod(kubeconfig, clientset, silenceCmd)
+	op, err := utils.ExecInPod(kubeconfig, clientset, silenceCmd)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -53,7 +54,7 @@ func ListSilence(clusterID string) {
 	}
 }
 
-func printSilence(silence Silence) {
+func printSilence(silence utils.Silence) {
 	id, matchers, status, created, starts, end, comment := silence.ID, silence.Matchers, silence.Status, silence.CreatedBy, silence.StartsAt, silence.EndsAt, silence.Comment
 	fmt.Println("-------------------------------------------")
 	for _, matcher := range matchers {
